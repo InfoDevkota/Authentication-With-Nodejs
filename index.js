@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session'
+import { hash, compare } from 'bcrypt';
 
 import path from 'path';
 
@@ -42,18 +43,39 @@ app.post("/login", (req, res, next) => {
     let email = req.body.email;
     let password = req.body.password;
 
-    User.findOne({ email: email, password: password }).then(user => {
+    //now we will get the user, then compare the hashedPassword (saved in DB)
+    // with currently provided password
+    User.findOne({ email: email }).then(async user => {
         if (user) {
 
-            //let's save the user in the session
-            req.session.user = user;
+            let passwordMatched = await compare(password, user.password);
 
-            res.render('login-result', {
-                message: "Login Success",
-                message2: false,
-                success: true
-            });
+            if (passwordMatched) {
+                // email and password matched
+
+                //let's save the user in the session
+                req.session.user = user;
+
+                res.render('login-result', {
+                    message: "Login Success",
+                    message2: false,
+                    success: true
+                });
+            } else {
+
+                //password did not match
+                res.render('login-result', {
+                    message: "Login Failed",
+                    message2: "Email and password did not match.",
+                    success: false
+                });
+            }
+
+
+
         } else {
+
+            //user not found associated with that mail
             res.render('login-result', {
                 message: "Login Failed",
                 message2: "Email and password did not match.",
@@ -68,11 +90,15 @@ app.post("/signup", async (req, res, next) => {
     let email = req.body.email;
     let password = req.body.password;
 
+    // let's make use of bcrypt to hash
+    let hashedPassword = await hash(password, 10);
+
     let newUser = new User({
         name: name,
         email: email,
-        password: password
+        password: hashedPassword
     })
+
     try {
         let user = await newUser.save();
 
