@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>NodeJs Authentication</title>
+    <% if(success) { %>
+        <meta http-equiv="refresh" content="2;url=/" />
+        <%} else { %>
+            <meta http-equiv="refresh" content="2;url=/login" />
+            <%} %>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <div class="action">
+            <div>
+
+                <h1>
+                    <%= message %>
+                </h1>
+                <% if(message2){ %>
+                    <div class="center error">
+                        <%= message2 %>
+                    </div>
+                    <br>
+
+                    <%} %>
+                        <div class="center">
+
+                            <% if(success) { %>
+                                Redirecting to home
+                                <%} else { %>
+                                    Redirecting to login
+                                    <%} %>
+                        </div>
+
+
+                        <br>
+                        <br>
+                        <br>
+                        <br>
+                        <div class="center">
+                            <a href="/">Home</a>
+                        </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

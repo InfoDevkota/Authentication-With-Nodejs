@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>NodeJs Authentication</title>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div>
+
+            <% if(user) { %>
+                <div>
+                    <h1>
+                        Hello,
+
+                        <a href="/me">
+                            <span class="name">
+                                <%= user.name %>
+                            </span>
+                        </a>
+                    </h1>
+                </div>
+
+                <% } else { %>
+                    <div class="action">
+                        <a class="home-button" href="/login">Login</a> <a class="home-button" href="/signup">Signup</a>
+                    </div>
+                    <% } %>
+                        <br>
+                        <div class="center">
+                            <a href="/me">My Profile</a>
+                        </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
