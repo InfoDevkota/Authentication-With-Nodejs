@@ -1,90 +1,22 @@
 import express from 'express';
-import session from 'express-session'
 import { hash, compare } from 'bcrypt';
-
-import path from 'path';
+import jwt from 'jsonwebtoken';
 
 import { connectDB } from './db.js';
 import { User } from './user.model.js';
 import { isAuth } from './auth.js'
+import { JWT_SECRET } from './config.js';
 
 const app = express();
 
-app.set("view engine", "ejs");
-app.set("views", path.join(path.resolve(), "views"));
-app.use("/static", express.static(path.join(path.resolve(), 'static')));
-
-app.use(express.urlencoded({
-    extended: true
-}));
-
-app.use(session({
-    secret: "aSecret-UseENV",
-    resave: false,
-    saveUninitialized: false
-}))
+app.use(express.json());
 
 app.get("/", (req, res, next) => {
-    //if a user is logined, the user in session is defined
-    let user = req.session.user;
-    res.render('home', {
-        user: user
+    res.status(200).json({
+        message: "Hi"
     });
 })
-app.get("/login", (req, res, next) => {
-    res.render('login');
-})
-app.get("/signup", (req, res, next) => {
-    res.render('signup');
-})
 
-app.post("/login", (req, res, next) => {
-
-    let email = req.body.email;
-    let password = req.body.password;
-
-    //now we will get the user, then compare the hashedPassword (saved in DB)
-    // with currently provided password
-    User.findOne({ email: email }).then(async user => {
-        if (user) {
-
-            let passwordMatched = await compare(password, user.password);
-
-            if (passwordMatched) {
-                // email and password matched
-
-                //let's save the user in the session
-                req.session.user = user;
-
-                res.render('login-result', {
-                    message: "Login Success",
-                    message2: false,
-                    success: true
-                });
-            } else {
-
-                //password did not match
-                res.render('login-result', {
-                    message: "Login Failed",
-                    message2: "Email and password did not match.",
-                    success: false
-                });
-            }
-
-
-
-        } else {
-
-            //user not found associated with that mail
-            res.render('login-result', {
-                message: "Login Failed",
-                message2: "Email and password did not match.",
-                success: false
-            });
-
-        }
-    })
-})
 app.post("/signup", async (req, res, next) => {
     let name = req.body.name;
     let email = req.body.email;
@@ -101,31 +33,87 @@ app.post("/signup", async (req, res, next) => {
 
     try {
         let user = await newUser.save();
+        user = user.toObject();
+        let { password, ...userWithoutPass } = user;
 
-        res.render('signup-result', {
-            user: user,
-            message: "Account Created",
-            message2: false,
-            success: true
-        });
+        console.log(userWithoutPass);
+
+        res.status(201).json({
+            message: "Account created",
+            user: userWithoutPass
+        })
 
     } catch (error) {
+        console.log(error.toString());
 
-        res.render('signup-result', {
-            message: "Account Creation Failed",
-            message2: 'The Email may have been already used.',
-            success: false
-        });
+        // 
+        res.status(400).json({
+            message: "error on creating account."
+        })
     }
 
 
 })
 
+app.post("/login", (req, res, next) => {
+
+    let email = req.body.email;
+    let password = req.body.password;
+
+    //now we will get the user, then compare the hashedPassword (saved in DB)
+    // with currently provided password
+    User.findOne({ email: email }).lean().then(async user => {
+        if (user) {
+
+            let passwordMatched = await compare(password, user.password);
+
+            if (passwordMatched) {
+                // email and password matched
+
+                let { password, ...userWithoutPass } = user;
+
+
+                let token = jwt.sign({ user: userWithoutPass }, JWT_SECRET, {
+                    expiresIn: '7d' // expressed in seconds or a string describing a time span https://github.com/zeit/ms.js.
+                })
+
+
+                res.status(200).json({
+                    message: "Login Success",
+                    token: token,
+                    user: userWithoutPass
+                });
+            } else {
+
+                //password did not match
+                res.status(403).json({
+                    message: "Email and password did not match.",
+                });
+            }
+
+        } else {
+
+            //user not found associated with that mail
+            res.status(403).json({
+                message: "Email and password did not match.",
+            });
+
+        }
+    })
+})
+
+
 app.get("/me", isAuth, (req, res, next) => {
-    let user = req.session.user;
-    res.render('me', {
-        user: user
-    });
+    let user = req.user;
+    User.findOne({ _id: user._id }).lean().then(user => {
+
+        delete user.password;
+
+        res.status(200).json({
+            message: "User Profile",
+            user
+        })
+    })
 })
 
 
