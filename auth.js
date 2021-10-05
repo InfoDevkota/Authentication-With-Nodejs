@@ -4,7 +4,7 @@ import { JWT_SECRET } from './config.js';
 export const isAuth = (req, res, next) => {
     // console.log(req.headers)
     if (!req.headers.authorization) {
-        return res.statsu(401).json({
+        return res.status(401).json({
             message: "Authorization Header missing"
         })
     }
